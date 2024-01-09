@@ -356,117 +356,64 @@ namespace FormBuilder.Controllers
         [HttpGet("{formId}/evaluated/{evaluatedUserId}")]
         public IActionResult GetFormAndEvaluatedUser(int formId, Guid evaluatedUserId)
         {
-            // Your logic to retrieve data based on formId and evaluatedUserId
 
 
-            //var context = new ();
-
-            //var students = dbContext.Forms
-            //                  .FromSql("Select * from Forms")
-            //                  .ToList();
-
-            //var students = dbContext.Forms
-            //          .FromSqlRaw("SELECT * FROM Forms")
-            //          .ToList();
-
-            var result = dbContext.FormElements
-                            .Where(fe => fe.Id == 28)
-                            .Select(fe => new
-                                        {
-                                        Id = fe.Id,
-                                TypeIndicator = fe.Type == "text" ? 1 : 0
-                                         })
-                                .FirstOrDefault();
+            //var result = dbContext.FormElements
+            //                .Where(fe => fe.Id == 28)
+            //                .Select(fe => new
+            //                            {
+            //                            Id = fe.Id,
+            //                    TypeIndicator = fe.Type == "text" ? 1 : 0
+            //                             })
+            //                    .FirstOrDefault();
 
             var userId = new Guid("63dd9c13-22b6-44aa-b9ad-b52c889c594d");
-            var ElemntId = 28;
-            var sofg = dbContext.FormElements
-                //.Where(fe => fe.Id == ElemntId)
-                    .Join(
-                     dbContext.Answers.Where(a => a.EvaluatedUserId == userId),
+            var elementId = 30;
+
+            var data = dbContext.FormElements
+                .Join(
+                    dbContext.Answers.Where(a => a.EvaluatedUserId == userId),
                     fe => fe.Id,
                     a => a.FormElementId,
                     (fe, a) => new { FormElement = fe, Answer = a }
-                     )
-                    .Join(
-                 dbContext.Metas.Where(m=>m.RelatableId== ElemntId && 
-                 m.RelatableType == "FormElement" 
-                 && m.Key == "ratio"),
-                  x => x.FormElement.Id,
-                  m => m.RelatableId,
-                  (x, m) => new { x.FormElement, x.Answer, RatioMeta = m }
-                 )
-    //            .GroupJoin(
-    //    dbContext.Metas
-    //        .Where(m => m.RelatableId == ElemntId && m.RelatableType == "FormElement" && m.Key == "reverse_grading" && m.Value == "True"),
-    //    x => x.FormElement.Id,
-    //    m => m.RelatableId,
-    //    (x, reverseMetas) => new { x.FormElement, x.Answer, x.RatioMeta, ReverseMetas = reverseMetas }
-    //)
-    //            .SelectMany(
-    //    x => x.ReverseMetas.DefaultIfEmpty(),
-    //    (x, reverseMeta) => new { x.FormElement, x.Answer, x.RatioMeta}
-    //)
-    .Where(x => x.FormElement.Id == ElemntId)
-    .GroupBy(x => new { x.FormElement.Id, x.Answer.EvaluatedUserId})
-    .Select(g => new
-    {
-          Id = g.Key.Id,
-        OverallPoint = g.Select(a => decimal.Parse(a.Answer.AnswerText)).Sum() / g.Count()
-    })
-                 .ToList();
-            Console.WriteLine(sofg);
+                )
+                .Join(
+                    dbContext.Metas.Where(m => m.RelatableId == elementId && m.RelatableType == "FormElement" && m.Key == "ratio"),
+                    x => x.FormElement.Id,
+                    m => m.RelatableId,
+                    (x, m) => new { x.FormElement, x.Answer, RatioMeta = m }
+                )
+                .Where(x => x.FormElement.Id == elementId)
+                .ToList(); // Fetch data from the database
 
-            //var someValue = "Real Form";
-            //var students = dbContext.Forms
-            //          .FromSqlRaw("SELECT * FROM Forms WHERE Title = {0}", someValue)
-            //          .ToList();
+            var groupedData = data
+                .GroupBy(x => new { x.FormElement.Id, x.Answer.EvaluatedUserId });
+
+            var result = groupedData
+                .Select(g => new
+                {
+                    Id = g.Key.Id,
+                    OverallPoint = g.Select(a => a.Answer.AnswerText) // No parsing here
+                        .Select(t => decimal.TryParse(t, out var parsed) ? parsed : 0m)
+                        .Sum() / g.Count()
+                })
+                .FirstOrDefault();
 
 
-            //        string sqlQuery = @"
-            //    SELECT 
-            //       Count(*)
-            //    FROM 
-            //        FormElements;
-            //";
+            Console.WriteLine(result);
 
 
-       
-            //EXEC GetCalculatedResult @FormElementId = 31,@UserId = '63dd9c13-22b6-44aa-b9ad-b52c889c594d';
-
-
-            //          var result = dbContext.FormElements
-            //  .FromSqlRaw("GetCalculatedResult")
-            //// If you don't have an entity type
-            //   //.Select(x => new { CalculatedResult = x.CalculatedResult })
-            //  .ToList();
-
-            //Console.WriteLine(result);
-
-
-            //int studentName = dbContext.Database
-            //    .FromSqlRaw<int>("Select studentname from Student where studentid=1")
-            //               .FirstOrDefault();
-
-
-
-
-
-            //        var result = dbContext.TableA
-            //.FromSqlRaw(sqlQuery)
-            //.AsEnumerable()  // If you don't have an entity type
-            //.Select(x => x.CalculatedResult)
-            //.FirstOrDefault();
-
-
-            //.FromSqlInterpolated(FormattableStringFactory.Create(sqlQuery, evaluatedUserId, formElementId))
-            //.Select(x => x.OverallPoint)
-            //.FirstOrDefault();
-
-
-            var formElementOverallPoints = CalculateOverallPoint(28, evaluatedUserId);
-
-            Console.WriteLine(formElementOverallPoints);
+            //            .GroupJoin(
+            //    dbContext.Metas
+            //        .Where(m => m.RelatableId == ElemntId && m.RelatableType == "FormElement" && m.Key == "reverse_grading" && m.Value == "True"),
+            //    x => x.FormElement.Id,
+            //    m => m.RelatableId,
+            //    (x, reverseMetas) => new { x.FormElement, x.Answer, x.RatioMeta, ReverseMetas = reverseMetas }
+            //)
+            //            .SelectMany(
+            //    x => x.ReverseMetas.DefaultIfEmpty(),
+            //    (x, reverseMeta) => new { x.FormElement, x.Answer, x.RatioMeta}
+            //)
 
             return Ok($"Form ID: {formId}, Evaluated User ID: {evaluatedUserId}");
         }
