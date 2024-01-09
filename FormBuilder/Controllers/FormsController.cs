@@ -463,14 +463,6 @@ namespace FormBuilder.Controllers
             //.Select(x => x.OverallPoint)
             //.FirstOrDefault();
 
-            //int totalEnrolledStudents = result?.overall_point ?? 0;
-
-
-
-
-
-
-
 
             var formElementOverallPoints = CalculateOverallPoint(28, evaluatedUserId);
 
