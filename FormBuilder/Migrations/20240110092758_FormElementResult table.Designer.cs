@@ -4,14 +4,16 @@ using FormBuilder.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace FormBuilder.Migrations
 {
     [DbContext(typeof(FormBuilderAPIDbContext))]
-    partial class FormBuilderAPIDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240110092758_FormElementResult table")]
+    partial class FormElementResulttable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

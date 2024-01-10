@@ -44,6 +44,9 @@ namespace FormBuilder.Models
         public List<Answer> Answers { get; set; }
 
 
+        public List<FormElementResult> FormElementResults { get; set; }
+
+
 
     }
 }

@@ -20,6 +20,7 @@ namespace FormBuilder.Data
         public DbSet<FormElement> FormElements { get; set; }
         public DbSet<Answer> Answers { get; set; }
         public DbSet<Meta> Metas { get; set; }
+        public DbSet<FormElementResult> FormElementResults { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -69,6 +70,19 @@ namespace FormBuilder.Data
                  .WithMany(fe => fe.Answers)
                  .HasForeignKey(a => a.FormElementId)
                  .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<FormElementResult>()
+                .HasOne(c => c.FormElement)
+                .WithMany(fe => fe.FormElementResults) // Assuming you have a navigation property in FormElement
+                .HasForeignKey(c => c.FormElementId)
+                .OnDelete(DeleteBehavior.Restrict); // Adjust this based on your needs
+
+            // Assuming you have a User entity
+            modelBuilder.Entity<FormElementResult>()
+                .HasOne(c => c.User)
+                .WithMany(u => u.FormElementResults) // Assuming you have a navigation property in User
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             //modelBuilder.Entity<Meta<int>>()
             //     .HasOne(m => m.RelatableEntity)

@@ -34,11 +34,11 @@ namespace FormBuilder.Controllers
             var forms = dbContext.Forms
                         .Include(f => f.User)
                         .Select(f => new FormIndexDTO
-                            {
-                                Title = f.Title,
-                                Type = f.Type,
-                                UserName = f.User != null ? f.User.FullName : "N/A" // Use the user's name if available
-                            })
+                        {
+                            Title = f.Title,
+                            Type = f.Type,
+                            UserName = f.User != null ? f.User.FullName : "N/A" // Use the user's name if available
+                        })
                              .ToList();
 
             return Ok(forms);
@@ -52,7 +52,7 @@ namespace FormBuilder.Controllers
 
             // Create and add the Form entity
             var form = new Form
-            {    
+            {
                 UserId = addFormRequest.UserId,
                 Uuid = Guid.NewGuid(),
                 Type = addFormRequest.Type,
@@ -356,64 +356,87 @@ namespace FormBuilder.Controllers
         [HttpGet("{formId}/evaluated/{evaluatedUserId}")]
         public IActionResult GetFormAndEvaluatedUser(int formId, Guid evaluatedUserId)
         {
+            //var userId = new Guid("63dd9c13-22b6-44aa-b9ad-b52c889c594d");
+            //var ElementId = 28;
 
 
-            //var result = dbContext.FormElements
-            //                .Where(fe => fe.Id == 28)
-            //                .Select(fe => new
-            //                            {
-            //                            Id = fe.Id,
-            //                    TypeIndicator = fe.Type == "text" ? 1 : 0
-            //                             })
-            //                    .FirstOrDefault();
+            bool exists = dbContext.FormElementResults
+                    .Any(f => f.FormElement.FormId == formId &&
+                        f.User.Id == evaluatedUserId);
 
-            var userId = new Guid("63dd9c13-22b6-44aa-b9ad-b52c889c594d");
-            var elementId = 30;
+            Console.WriteLine(exists);
 
-            var data = dbContext.FormElements
-                .Join(
-                    dbContext.Answers.Where(a => a.EvaluatedUserId == userId),
-                    fe => fe.Id,
-                    a => a.FormElementId,
-                    (fe, a) => new { FormElement = fe, Answer = a }
-                )
-                .Join(
-                    dbContext.Metas.Where(m => m.RelatableId == elementId && m.RelatableType == "FormElement" && m.Key == "ratio"),
-                    x => x.FormElement.Id,
-                    m => m.RelatableId,
-                    (x, m) => new { x.FormElement, x.Answer, RatioMeta = m }
-                )
-                .Where(x => x.FormElement.Id == elementId)
-                .ToList(); // Fetch data from the database
+            var formElementIds = dbContext.Forms
+                .Where(f => f.Id == formId)
+                .SelectMany(f => f.FormElements.Select(fe => fe.Id))
+                .ToList();
 
-            var groupedData = data
-                .GroupBy(x => new { x.FormElement.Id, x.Answer.EvaluatedUserId });
+            //var 
+            foreach (var formElementId in formElementIds)
+            {
+                var ElementId = formElementId;
+                var userId = evaluatedUserId;
 
-            var result = groupedData
-                .Select(g => new
+
+                // Query to get data from the main tables
+                var mainQuery = dbContext.FormElements
+            .Join(
+                dbContext.Answers.Where(a => a.EvaluatedUserId == userId),
+                fe => fe.Id,
+                a => a.FormElementId,
+                (fe, a) => new { FormElement = fe, Answer = a }
+            )
+            .Join(
+                dbContext.Metas.Where(m => m.RelatableId == ElementId && m.RelatableType == "FormElement" && m.Key == "ratio"),
+                x => x.FormElement.Id,
+                m => m.RelatableId,
+                (x, m) => new { x.FormElement, x.Answer, RatioMeta = m }
+            )
+            .ToList(); // Fetch data from the database
+
+                // Query to get data for LEFT JOIN
+                var reverseMetas = dbContext.Metas
+                    .Where(m => m.RelatableType == "FormElement" && m.Key == "reverse_grading" && m.Value == "true")
+                    .ToList(); // Fetch data from the database
+
+                // Combine the results
+                var result = mainQuery
+                    .Where(x => x.FormElement.Id == ElementId)
+                    .GroupBy(x => new
+                    {
+                        x.FormElement.Id,
+                        x.Answer.EvaluatedUserId,
+                        ReverseMetaKey = reverseMetas.FirstOrDefault(rm => rm.RelatableId == x.FormElement.Id)?.Key
+                    })
+                    .Select(g => new
+                    {
+                        Id = g.Key.Id,
+                        EvaluatedUserId = g.Key.EvaluatedUserId,
+                        ReverseMetaKey = g.Key.ReverseMetaKey,
+                        OverallPoint = g.Key.ReverseMetaKey == "reverse_grading" ?
+                5 - g.Select(a => decimal.TryParse(a.Answer.AnswerText, out var parsed) ? parsed : 0m).Average() + 1 :
+                g.Select(a => decimal.TryParse(a.Answer.AnswerText, out var parsed) ? parsed : 0m).Sum() / g.Count()
+                    })
+                    .FirstOrDefault();
+
+
+                var formElementResult = new FormElementResult
                 {
-                    Id = g.Key.Id,
-                    OverallPoint = g.Select(a => a.Answer.AnswerText) // No parsing here
-                        .Select(t => decimal.TryParse(t, out var parsed) ? parsed : 0m)
-                        .Sum() / g.Count()
-                })
-                .FirstOrDefault();
+                    FormElementId = result.Id,
+                    UserId = result.EvaluatedUserId,
+                    OverallPoint = result.OverallPoint
+                };
+
+                dbContext.FormElementResults.Add(formElementResult);
+                dbContext.SaveChanges();
+
+            }
+           
 
 
-            Console.WriteLine(result);
 
 
-            //            .GroupJoin(
-            //    dbContext.Metas
-            //        .Where(m => m.RelatableId == ElemntId && m.RelatableType == "FormElement" && m.Key == "reverse_grading" && m.Value == "True"),
-            //    x => x.FormElement.Id,
-            //    m => m.RelatableId,
-            //    (x, reverseMetas) => new { x.FormElement, x.Answer, x.RatioMeta, ReverseMetas = reverseMetas }
-            //)
-            //            .SelectMany(
-            //    x => x.ReverseMetas.DefaultIfEmpty(),
-            //    (x, reverseMeta) => new { x.FormElement, x.Answer, x.RatioMeta}
-            //)
+
 
             return Ok($"Form ID: {formId}, Evaluated User ID: {evaluatedUserId}");
         }
@@ -456,7 +479,7 @@ namespace FormBuilder.Controllers
             var result = await dbContext.Query<OverallPointDTO>()
                 .FromSqlRaw(sqlQuery, new SqlParameter("@EvaluatedUserId", evaluatedUserId), new SqlParameter("@FormElementId", formElementId))
                 .FirstOrDefaultAsync();
-            
+
             Console.WriteLine(result);
 
             // Return the overall point

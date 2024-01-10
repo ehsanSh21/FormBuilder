@@ -23,5 +23,8 @@ namespace FormBuilder.Models
         [InverseProperty("EvaluatedUser")]
         public List<Answer> EvaluationsReceived { get; set; }
 
+        public List<FormElementResult> FormElementResults { get; set; }
+
+
     }
 }
