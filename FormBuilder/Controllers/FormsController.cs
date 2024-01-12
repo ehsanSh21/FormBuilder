@@ -37,7 +37,7 @@ namespace FormBuilder.Controllers
                         {
                             Title = f.Title,
                             Type = f.Type,
-                            UserName = f.User != null ? f.User.FullName : "N/A" // Use the user's name if available
+                            UserName = f.User != null ? f.User.FullName : "N/A" 
                         })
                              .ToList();
 
@@ -50,22 +50,18 @@ namespace FormBuilder.Controllers
         public async Task<IActionResult> AddForm(AddFormRequest addFormRequest)
         {
 
-            // Create and add the Form entity
             var form = new Form
             {
                 UserId = addFormRequest.UserId,
                 Uuid = Guid.NewGuid(),
                 Type = addFormRequest.Type,
                 Title = addFormRequest.Title,
-                //Point = addFormRequest.Point,
-                //MinPoint = addFormRequest.MinPoint
-                // Set other properties as needed
+
             };
             dbContext.Forms.Add(form);
             await dbContext.SaveChangesAsync();
 
 
-            // Loop through FormGroups in the request and create FormGroups and FormElements
             foreach (var formGroupRequest in addFormRequest.FormGroups)
             {
                 var formGroup = new FormGroup
@@ -75,11 +71,10 @@ namespace FormBuilder.Controllers
                     Data = formGroupRequest.Data,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
-                    // Set other properties as needed
                 };
                 dbContext.FormGroups.Add(formGroup);
 
-                await dbContext.SaveChangesAsync(); // Save to get the formGroup Id
+                await dbContext.SaveChangesAsync(); 
 
                 if (formGroupRequest.Ratio.HasValue)
                 {
@@ -95,7 +90,6 @@ namespace FormBuilder.Controllers
                 }
 
 
-                //Console.WriteLine(formGroupRequest.Elements);
 
 
                 foreach (var formElementRequest in formGroupRequest.Elements)
@@ -108,10 +102,9 @@ namespace FormBuilder.Controllers
                         Uuid = Guid.NewGuid(),
                         Title = formElementRequest.Title,
                         Type = formElementRequest.Type,
-                        Ordering = (int)formElementRequest.Ordering, // Adjust based on your requirements
+                        Ordering = (int)formElementRequest.Ordering,
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
-                        // Set other properties as needed
                     };
                     dbContext.FormElements.Add(formElement);
                     await dbContext.SaveChangesAsync();
@@ -121,7 +114,7 @@ namespace FormBuilder.Controllers
                         var formElementRatioMeta = new Meta
                         {
                             Key = "ratio",
-                            Value = formElementRequest.Ratio.Value.ToString(), // Assuming Ratio is a numeric value
+                            Value = formElementRequest.Ratio.Value.ToString(), 
                             IsJson = false,
                             RelatableType = "FormElement",
                             RelatableId = formElement.Id
@@ -129,13 +122,12 @@ namespace FormBuilder.Controllers
                         dbContext.Metas.Add(formElementRatioMeta);
                     }
 
-                    // Store reverse_grading for FormElement if not null
                     if (formElementRequest.ReverseGrading.HasValue)
                     {
                         var formElementReverseGradingMeta = new Meta
                         {
                             Key = "reverse_grading",
-                            Value = formElementRequest.ReverseGrading.Value.ToString(), // Assuming ReverseGrading is a boolean
+                            Value = formElementRequest.ReverseGrading.Value.ToString(), 
                             IsJson = false,
                             RelatableType = "FormElement",
                             RelatableId = formElement.Id
@@ -146,14 +138,12 @@ namespace FormBuilder.Controllers
                 }
             }
 
-            // Save changes to the database
+        
             await dbContext.SaveChangesAsync();
 
-            // Return the ID of the created Form entity
-            //return Ok(new { FormId = form.Id });
-
+          
             var newForm = dbContext.Forms
-                      .Include(f => f.User) // Include User details if needed
+                      .Include(f => f.User) 
                       .Include(f => f.FormGroups)
                           .ThenInclude(fg => fg.FormElements)
                       .FirstOrDefault(f => f.Id == form.Id);
@@ -172,14 +162,11 @@ namespace FormBuilder.Controllers
 
             if (existingForm == null)
             {
-                return NotFound(); // Form not found
+                return NotFound();
             }
 
-            // Update form properties
             existingForm.Type = updateFormRequest.Type;
-            // Update other properties as needed
 
-            // Save changes to the database
             await dbContext.SaveChangesAsync();
 
             return Ok(existingForm);
@@ -189,10 +176,9 @@ namespace FormBuilder.Controllers
         public async Task<IActionResult> GetForm(int id)
         {
 
-            //var form = await dbContext.Forms.FindAsync(id);
 
             var form = dbContext.Forms
-                        .Include(f => f.User) // Include User details if needed
+                        .Include(f => f.User) 
                         .Include(f => f.FormGroups)
                             .ThenInclude(fg => fg.FormElements)
                         .FirstOrDefault(f => f.Id == id);
@@ -201,81 +187,14 @@ namespace FormBuilder.Controllers
 
             if (form == null)
             {
-                return NotFound(); // Form not found
+                return NotFound(); 
             }
-
-            //var formDetailDTO = new FormDetailDTO
-            //{
-            //    Id = form.Id,
-            //    Uuid = form.Uuid,
-            //    Title = form.Title,
-            //    Type = form.Type,
-            //    UserFullName = form.User?.FullName,
-            //    // Map other properties
-            //    //UserName = User != null ? User.FullName : "N/A" // Use the user's name if available
-
-            //    //User = new UserDTO
-            //    //{
-            //    //    // Map user properties
-            //    //},
-
-            //    FormGroups = form.FormGroups.Select(fg => new FormGroupDTO
-            //    {
-            //        Id = fg.Id,
-            //        Title = fg.Title,
-            //        Data = fg.Data,
-            //        // Map other properties
-
-            //        FormElements = fg.FormElements.Select(fe => new FormElementDTO
-            //        {
-            //            Title = fe.Title,
-            //            Type = fe.Type,
-            //            Ordering = fe.Ordering
-            //            // Map other properties
-            //        }).ToList()
-            //    }).ToList()
-            //};
-
-            //return Ok(formDetailDTO);
-
-            // Use AutoMapper to map Form to FormDetailDTO
+             
             var formDetailDto = mapper.Map<FormDetailDTO>(form);
 
             return Ok(formDetailDto);
         }
 
-
-        //[HttpPost("{formId}/submit")]
-        //public async Task<IActionResult> SubmitAnswer(int formId, [FromBody] SubmitAnswerRequest submitAnswerRequest)
-        //{
-        //    // Check if the form with the given id exists
-        //    var form = await dbContext.Forms.FindAsync(formId);
-
-        //    if (form == null)
-        //    {
-        //        return NotFound($"Form with ID {formId} not found.");
-        //    }
-
-        //    // Validate the request data as needed
-        //    // (You may want to create a separate validation method or use attributes on your request model)
-
-        //    // Create and add the answer entity
-        //    var answer = new Answer
-        //    {
-        //        UserId = submitAnswerRequest.UserId,
-        //        FormElementId = submitAnswerRequest.FormElementId,
-        //        AnswerText = submitAnswerRequest.Answer,
-        //        EvaluatedUserId = submitAnswerRequest.EvaluatedUserId,
-        //        // Set other properties as needed
-        //    };
-
-        //    dbContext.Answers.Add(answer);
-
-        //    // Save changes to the database
-        //    await dbContext.SaveChangesAsync();
-
-        //    return Ok(answer);
-        //}
 
         [HttpPost("submit-answers/{formId}")]
         public IActionResult SubmitAnswer(int formId, [FromBody] SubmitAnswerRequest submitAnswerRequest)
@@ -319,10 +238,10 @@ namespace FormBuilder.Controllers
 
 
             var newForm = dbContext.Forms
-    .Include(f => f.User)
-    .Include(f => f.FormGroups)
-        .ThenInclude(fg => fg.FormElements)
-    .FirstOrDefault(f => f.Id == formId);
+                    .Include(f => f.User)
+                    .Include(f => f.FormGroups)
+                    .ThenInclude(fg => fg.FormElements)
+                    .FirstOrDefault(f => f.Id == formId);
 
             if (newForm != null)
             {
@@ -350,19 +269,22 @@ namespace FormBuilder.Controllers
 
 
 
-
-
-
         [HttpGet("{formId}/evaluated/{evaluatedUserId}")]
         public IActionResult GetFormAndEvaluatedUser(int formId, Guid evaluatedUserId)
         {
-            //var userId = new Guid("63dd9c13-22b6-44aa-b9ad-b52c889c594d");
-            //var ElementId = 28;
-
-
             bool exists = dbContext.FormElementResults
-                    .Any(f => f.FormElement.FormId == formId &&
+                        .Any(f => f.FormElement.FormId == formId &&
                         f.User.Id == evaluatedUserId);
+            if (!exists)
+            {
+                Console.WriteLine("asdas");
+            }
+            else
+            {
+                Console.WriteLine("Asdasd");
+            }
+
+            var df = dbContext.FormElementResults.All(f => f.OverallPoint > 10);
 
             Console.WriteLine(exists);
 
@@ -371,7 +293,6 @@ namespace FormBuilder.Controllers
                 .SelectMany(f => f.FormElements.Select(fe => fe.Id))
                 .ToList();
 
-            //var 
             foreach (var formElementId in formElementIds)
             {
                 var ElementId = formElementId;
@@ -392,14 +313,12 @@ namespace FormBuilder.Controllers
                 m => m.RelatableId,
                 (x, m) => new { x.FormElement, x.Answer, RatioMeta = m }
             )
-            .ToList(); // Fetch data from the database
+            .ToList(); 
 
-                // Query to get data for LEFT JOIN
                 var reverseMetas = dbContext.Metas
                     .Where(m => m.RelatableType == "FormElement" && m.Key == "reverse_grading" && m.Value == "true")
-                    .ToList(); // Fetch data from the database
+                    .ToList(); 
 
-                // Combine the results
                 var result = mainQuery
                     .Where(x => x.FormElement.Id == ElementId)
                     .GroupBy(x => new
@@ -434,61 +353,7 @@ namespace FormBuilder.Controllers
            
 
 
-
-
-
-
             return Ok($"Form ID: {formId}, Evaluated User ID: {evaluatedUserId}");
-        }
-
-
-        private async Task<decimal?> CalculateOverallPoint(int formElementId, Guid evaluatedUserId)
-        {
-
-            Console.WriteLine(formElementId);
-            // Your raw SQL query using Entity Framework
-            string sqlQuery = @"
-        SELECT 
-            CASE 
-                WHEN metas_reverse.[key] = 'reverse_grading' THEN 5 - AVG(CAST(answers.AnswerText AS DECIMAL)) + 1 
-                ELSE SUM(CAST(answers.AnswerText AS DECIMAL)) / COUNT(*) 
-            END AS overall_point
-        FROM 
-            FormElements
-        JOIN 
-            answers ON FormElements.id = Answers.FormElementId
-            AND answers.EvaluatedUserId = @EvaluatedUserId
-        JOIN 
-            metas ON FormElementId = metas.RelatableId
-            AND metas.RelatableType = 'FormElement'
-            AND metas.[key] = 'ratio'
-        LEFT JOIN 
-            metas AS metas_reverse ON FormElements.id = metas_reverse.RelatableId
-            AND metas_reverse.RelatableType = 'FormElement'
-            AND metas_reverse.[key] = 'reverse_grading'
-            AND metas_reverse.[value] = 'true'
-        WHERE 
-            FormElements.id = @FormElementId
-        GROUP BY 
-            FormElements.id,
-            answers.EvaluatedUserId,
-            metas_reverse.[key];
-    ";
-
-            // Execute the query using Entity Framework
-            var result = await dbContext.Query<OverallPointDTO>()
-                .FromSqlRaw(sqlQuery, new SqlParameter("@EvaluatedUserId", evaluatedUserId), new SqlParameter("@FormElementId", formElementId))
-                .FirstOrDefaultAsync();
-
-            Console.WriteLine(result);
-
-            // Return the overall point
-            return result?.OverallPoint;
-        }
-
-        public class OverallPointDTO
-        {
-            public decimal? OverallPoint { get; set; }
         }
 
 
