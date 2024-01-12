@@ -1,5 +1,6 @@
 ﻿using FormBuilder.Data;
 using FormBuilder.Models;
+using FormBuilder.Validators;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -26,16 +27,16 @@ namespace FormBuilder.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddUsers(AddUserRequest addUserRequest)
+        public async Task<IActionResult> AddUsers(User user)
         {
-            var user = new User()
+
+            var validator = new UserValidator();
+            var validationResult = validator.Validate(user);
+
+            if (!validationResult.IsValid)
             {
-                Id = Guid.NewGuid(),
-                Address = addUserRequest.Address,
-                FullName = addUserRequest.FullName,
-                Email = addUserRequest.Email,
-                Phone = addUserRequest.Phone
-            };
+                return BadRequest(validationResult.Errors);
+            }
 
             await dbContext.Users.AddAsync(user);
             await dbContext.SaveChangesAsync();
@@ -66,6 +67,9 @@ namespace FormBuilder.Controllers
 
             return Ok(existingUser);
         }
+
+
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUser(Guid id)

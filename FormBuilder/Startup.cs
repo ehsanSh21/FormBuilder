@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentValidation.AspNetCore;
 
 namespace FormBuilder
 {
@@ -43,6 +44,9 @@ namespace FormBuilder
             // services.AddScoped<IUserService, UserService>();
             // ...
             services.AddControllers();
+            services.AddControllers()
+           .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Startup>());
+
             //services.AddAutoMapper(typeof(Startup));
             services.AddAutoMapper(typeof(MappingProfile));
 
