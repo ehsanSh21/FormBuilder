@@ -22,14 +22,12 @@ namespace FormBuilder.Models
             public User User { get; set; }
 
 
-        [Required]
+            [Required]
             public decimal OverallPoint { get; set; }
 
             [ForeignKey(nameof(FormElementId))]
             public FormElement FormElement { get; set; }
 
-            // You may also need to add relationships for other foreign keys if necessary
-            // [ForeignKey(nameof(AnotherEntityId))]
-            // public AnotherEntity AnotherEntity { get; set; }
+   
     }
 }

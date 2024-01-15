@@ -14,12 +14,7 @@ namespace FormBuilder.DTOs.Forms
         public string Type { get; set; }
 
         public string UserFullName { get; set; } // Include FullName directly
-        //public string UserName { get; set; }
 
-
-        // Other properties as needed
-
-        //public UserDTO User { get; set; } // Assuming you have a UserDTO for displaying user details
 
         public List<FormGroupDTO> FormGroups { get; set; }
     }
@@ -31,29 +26,49 @@ namespace FormBuilder.DTOs.Forms
         public string Data { get; set; }
 
 
-        // Other properties as needed
-
         public List<FormElementDTO> FormElements { get; set; }
     }
 
     public class FormElementDTO
     {
-        //public int Id { get; set; }
-        //public Guid Uuid { get; set; }
         public string Title { get; set; }
         public string Type { get; set; }
         public int Ordering { get; set; }
 
-        // Other properties as needed
-
         public decimal? OverallPoint { get; set; }
 
+        //public FormElementResultDTO Result { get; set; }
+        public List<FormElementResultDTO> FormElementResults { get; set; }
+
         public List<AnswerDTO> Answers { get; set; }
+
+        public List<OptionDTO> Options { get; set; } = new List<OptionDTO>
+            {
+                new OptionDTO { Label = "Very Bad", Value = 1 },
+                new OptionDTO { Label = "Bad", Value = 2 },
+                new OptionDTO { Label = "Natural", Value = 3 },
+                new OptionDTO { Label = "Good", Value = 4 },
+                new OptionDTO { Label = "Very Good", Value = 5 }
+            };
+
+    }
+
+    public class FormElementResultDTO
+    {
+        public decimal? OverallPoint { get; set; }
+        //public int Id { get; set; }
+
+        // Other properties related to the result
+    }
+
+    public class OptionDTO
+    {
+        public string Label { get; set; }
+        public int Value { get; set; }
     }
 
     public class AnswerDTO
     {
-        // Add properties from your Answer model
 
         public Guid UserId { get; set; }
 
